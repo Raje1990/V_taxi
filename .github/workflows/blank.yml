@@ -1,299 +1,37 @@
-import 'package:flutter/material.dart';
+name: Build Android APK
 
-void main() {
-  runApp(const VTaxiApp());
-}
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
-class VTaxiApp extends StatelessWidget {
-  const VTaxiApp({Key? key}) : super(key: key);
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'V Taxi Thanjavur',
-      theme: ThemeData(
-        primarySwatch: Colors.amber,
-        scaffoldBackgroundColor: Colors.grey[100],
-      ),
-      home: const HomeScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
+    steps:
+    - uses: actions/checkout@v3
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'adopt'
+        java-version: '17'
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+        channel: 'stable'
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+    - name: Get Dependencies
+      run: flutter pub get
 
-  final List<Widget> _pages = [
-    const BookingHomeTab(),
-    const TripsTab(),
-    const AdminDriverTab(),
-  ];
+    - name: Build APK
+      run: flutter build apk --release
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.local_taxi, color: Colors.black87, size: 28),
-            SizedBox(width: 8),
-            Text(
-              'V Taxi தஞ்சாவூர்',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.amber[400],
-        elevation: 2,
-      ),
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.amber[800],
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'புக்கிங்',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_travel),
-            label: 'சிறப்புப் பயணம்',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.admin_panel_settings),
-            label: 'அட்மின்/டிரைவர்',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BookingHomeTab extends StatefulWidget {
-  const BookingHomeTab({Key? key}) : super(key: key);
-
-  @override
-  State<BookingHomeTab> createState() => _BookingHomeTabState();
-}
-
-class _BookingHomeTabState extends State<BookingHomeTab> {
-  final TextEditingController _pickupController = TextEditingController();
-  final TextEditingController _dropController = TextEditingController();
-  String _selectedCarType = 'Sedan';
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Banner Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.amber.shade300, Colors.amber.shade600],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.verified, size: 40, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'தஞ்சாவூரின் நம்பகமான V Taxi சேவை! பாதுகாப்பான மற்றும் விரைவான பயணம்.',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Search / Pickup Drop Inputs
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _pickupController,
-                    decoration: const InputDecoration(
-                      labelText: 'எங்கிருந்து ஏற வேண்டும் (Pickup)',
-                      prefixIcon: Icon(Icons.my_location, color: Colors.green),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _dropController,
-                    decoration: const InputDecoration(
-                      labelText: 'எங்கு செல்ல வேண்டும் (Drop)',
-                      prefixIcon: Icon(Icons.location_on, color: Colors.red),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Car Selection
-          const Text('வாகன வகைத் தேர்வு:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildCarOption('Auto', Icons.electric_rickshaw, '₹100'),
-              _buildCarOption('Sedan', Icons.directions_car, '₹250'),
-              _buildCarOption('SUV', Icons.airport_shuttle, '₹400'),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Action Buttons
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber[600],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('V Taxi புக்கிங் பெறwப்பட்டுள்ளது! டிரைவர் விரைவில் தொடர்புகொள்வார்.')),
-                );
-              },
-              icon: const Icon(Icons.bookmark_check, color: Colors.black),
-              label: const Text('டாக்ஸி বুক செய்யவும்', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                // WhatsApp booking action simulation
-              },
-            icon: const Icon(Icons.chat, color: Colors.white),
-              label: const Text('WhatsApp மூலம் புக்கிங்', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget_buildCarOption(String title, IconData icon, String price) {
-    bool isSelected = _selectedCarType == title;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCarType = title;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.amber[200] : Colors.white,
-          border: Border.all(color: isSelected ? Colors.amber.shade800 : Colors.grey.shade300, width: 2),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 36, color: Colors.black87),
-            const SizedBox(height: 6),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(price, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class TripsTab extends StatelessWidget {
-  const TripsTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        Text('சிறப்புப் பயணச் சேவைகள்', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.temple_hindu, color: Colors.deepOrange, size: 36),
-            title: Text('ஆன்மீகப் பயணம் (Spiritual Trip)'),
-            subtitle: Text('தஞ்சை பெரிய கோயில், புன்னைநல்லூர் மாரியம்மன் மற்றும் நவக்கிரக ஸ்தலங்கள் பயணம்.'),
-          ),
-        ),
-        SizedBox(height: 10),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.local_hospital, color: Colors.red, size: 36),
-            title: Text('மருத்துவப் பயணம் (Medical Trip)'),
-            subtitle: Text('மருத்துவமனை அவசரப் பயணங்கள் மற்றும் முதியோருக்கான சிறப்பு வாடகைச் சேவை.'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class AdminDriverTab extends StatelessWidget {
-  const AdminDriverTab({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('நிர்வாகம் & டிரைவர் பகுதி', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 15),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, minimumSize: const Size(double.infinity, 45)),
-            onPressed: () {},
-            icon: const Icon(Icons.supervised_user_circle),
-            label: const Text('அட்மின் பேனல் (Admin Panel - Rides List)'),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, minimumSize: const Size(double.infinity, 45)),
-            onPressed: () {},
-            icon: const Icon(Icons.drive_eta),
-            label: const Text('டிரைவர் மோட் (Driver Login & Acceptance)'),
-          ),
-        ],
-      ),
-    );
-  }
-}
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: build/app/outputs/flutter-apk/app-release.apk
